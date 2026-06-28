@@ -1,0 +1,60 @@
+# ============================================================
+# Docker Compose — UPI Offline Mesh (Production Stack)
+# Services: PostgreSQL, Redis, Spring Boot App
+# ============================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: upimesh-db
+    environment:
+      POSTGRES_DB: upimesh
+      POSTGRES_USER: upimesh
+      POSTGRES_PASSWORD: upimesh_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U upimesh"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: upimesh-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: upimesh-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/upimesh
+      SPRING_DATASOURCE_USERNAME: upimesh
+      SPRING_DATASOURCE_PASSWORD: upimesh_secret
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      BRIDGE_API_KEY: ${BRIDGE_API_KEY:-prod-bridge-secret-change-me}
+      # Persistent RSA key storage
+      upi.mesh.rsa.key-file-path: /var/secrets/server_rsa
+    volumes:
+      - rsa-keys:/var/secrets
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  rsa-keys:

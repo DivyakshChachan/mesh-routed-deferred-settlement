@@ -1,0 +1,27 @@
+# Docker
+docker-compose.override.yml
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Build
+target/
+*.jar
+*.war
+
+# Maven
+.mvn/repository/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.key
+*.pem
+/var/secrets/
+
+# Logs
+*.log
